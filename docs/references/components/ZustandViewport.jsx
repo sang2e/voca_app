@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useMediaQuery } from 'react-responsive';
+
 import { useZuViewport } from '@/store/useZuViewport';
 
 export const ZustandViewport = () => {

@@ -1,5 +1,6 @@
-import { createStore } from './store';
 import { toast } from 'react-toastify';
+
+import { createStore } from './store';
 
 const showToast = (options = {}) => {
   const toastId = options.toastId || `toast-${Date.now()}`;

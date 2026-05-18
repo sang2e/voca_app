@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
-import { useZuModal } from '@/store/useZuModal';
 import FocusTrap from 'focus-trap-react';
+import { useEffect,useState } from 'react';
+
+import { useZuModal } from '@/store/useZuModal';
 
 export const Alert = ({ title, sub, confirmText = '확인' }) => {
   const ZU_modal = useZuModal();
