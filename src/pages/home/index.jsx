@@ -4,17 +4,26 @@ import { wordbookMockData,wordMockData } from '@/db/wordMockData';
 
 import { HomeWordbookCard } from './components/HomeWordbookCard';
 
-// 학습 요약 수치 계산
+// 오늘 학습 완료 단어 수 (mock)
+const MOCK_LEARNED_COUNT = 4;
+
+// 학습 요약 수치 계산 (progressPercent는 derived value)
 function getSummaryStats() {
+  const totalWordCount = wordMockData.length;
+  const learnedCount = MOCK_LEARNED_COUNT;
+  const progressPercent = Math.round((learnedCount / totalWordCount) * 100);
+
   return {
     wordbookCount: wordbookMockData.length,
-    totalWordCount: wordMockData.length,
+    totalWordCount,
+    learnedCount,
+    progressPercent,
   };
 }
 
 export const HomePage = () => {
   const navigate = useNavigate();
-  const { wordbookCount, totalWordCount } = getSummaryStats();
+  const { wordbookCount, totalWordCount, learnedCount, progressPercent } = getSummaryStats();
 
   // 학습 시작: 첫 번째 단어장으로 이동
   const handleStudyStart = () => {
@@ -76,6 +85,33 @@ export const HomePage = () => {
           <div>
             <span className='text-3xl font-bold text-gray01'>{totalWordCount}</span>
             <p className='mt-0.5 text-xs text-gray03'>총 단어</p>
+          </div>
+        </div>
+
+        {/* 진행률 영역 */}
+        <div className='mt-5'>
+          {/* 진행률 수치 */}
+          <div className='mb-1.5 flex items-center justify-between'>
+            <span className='text-xs text-gray03'>
+              오늘 학습 진행률 &nbsp;
+              <span className='font-semibold text-gray01'>
+                {learnedCount} / {totalWordCount} 단어
+              </span>
+            </span>
+            <span className='text-sm font-bold text-main'>{progressPercent}%</span>
+          </div>
+
+          {/* progress bar: 배경 bg-layer, 채움 bg-main — token 기반으로 theme 확장 가능 */}
+          <div className='h-2 w-full overflow-hidden rounded-full bg-layer'>
+            <div
+              className='h-full rounded-full bg-main transition-all duration-300'
+              style={{ width: `${progressPercent}%` }}
+              role='progressbar'
+              aria-valuenow={progressPercent}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label='오늘 학습 진행률'
+            />
           </div>
         </div>
 
