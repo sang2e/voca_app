@@ -1,6 +1,8 @@
 import { lazy, Suspense } from 'react';
 import { Route, Routes } from 'react-router-dom';
 
+import { AppLayout } from '@/layouts/AppLayout';
+
 /* 각 페이지를 named export → lazy default 변환 */
 const LoginPage = lazy(() =>
   import('@/pages/login/index').then(m => ({ default: m.LoginPage }))
@@ -28,13 +30,15 @@ export const MainRouter = () => {
   return (
     <Suspense fallback={null}>
       <Routes>
-        <Route path='/login' element={<LoginPage />} />
-        <Route path='/' element={<HomePage />} />
-        <Route path='/library' element={<LibraryPage />} />
-        <Route path='/words/new' element={<WordNewPage />} />
-        <Route path='/study/:wordbookId' element={<StudyPage />} />
-        <Route path='/quiz/play' element={<QuizPlayPage />} />
-        <Route path='/quiz/result' element={<QuizResultPage />} />
+        <Route element={<AppLayout />}>
+          <Route path='/login' element={<LoginPage />} />
+          <Route path='/' element={<HomePage />} />
+          <Route path='/library' element={<LibraryPage />} />
+          <Route path='/words/new' element={<WordNewPage />} />
+          <Route path='/study/:wordbookId' element={<StudyPage />} />
+          <Route path='/quiz/play' element={<QuizPlayPage />} />
+          <Route path='/quiz/result' element={<QuizResultPage />} />
+        </Route>
       </Routes>
     </Suspense>
   );
