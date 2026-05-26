@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 import { wordbookMockData,wordMockData } from '@/db/wordMockData';
 
@@ -21,8 +21,17 @@ function getSummaryStats() {
   };
 }
 
+// 하단 탭 버튼 활성 상태에 따른 스타일
+function getNavItemClass(isActive) {
+  const base = 'flex flex-1 flex-col items-center gap-1 py-3 text-xs font-semibold focus-visible:outline focus-visible:outline-2';
+
+  if (isActive) return `${base} text-main`;
+  return `${base} text-gray05`;
+}
+
 export const HomePage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { wordbookCount, totalWordCount, learnedCount, progressPercent } = getSummaryStats();
 
   // 학습 시작: 첫 번째 단어장으로 이동
@@ -163,36 +172,64 @@ export const HomePage = () => {
         aria-label='하단 내비게이션'
       >
         <div className='flex'>
+          {/* 홈 탭 */}
           <button
             type='button'
-            className='flex flex-1 flex-col items-center gap-0.5 py-3 text-xs font-semibold text-main focus-visible:outline focus-visible:outline-2'
+            className={getNavItemClass(location.pathname === '/')}
             onClick={handleNavHome}
           >
-            <span className='text-base' aria-hidden='true'>
-              &#9711;
-            </span>
+            <svg width='22' height='22' viewBox='0 0 24 24' fill='none' aria-hidden='true'>
+              <path
+                d='M3 12L12 3L21 12V21H15V15H9V21H3V12Z'
+                stroke='currentColor'
+                strokeWidth='1.8'
+                strokeLinejoin='round'
+                strokeLinecap='round'
+              />
+            </svg>
             홈
           </button>
 
+          {/* 단어추가 탭 */}
           <button
             type='button'
-            className='flex flex-1 flex-col items-center gap-0.5 py-3 text-xs font-semibold text-gray04 focus-visible:outline focus-visible:outline-2'
+            className={getNavItemClass(location.pathname === '/words/new')}
             onClick={handleNavWordAdd}
           >
-            <span className='text-base' aria-hidden='true'>
-              &#43;
-            </span>
+            <svg width='22' height='22' viewBox='0 0 24 24' fill='none' aria-hidden='true'>
+              <path
+                d='M12 20H21'
+                stroke='currentColor'
+                strokeWidth='1.8'
+                strokeLinecap='round'
+              />
+              <path
+                d='M16.5 3.5L20.5 7.5L8 20H4V16L16.5 3.5Z'
+                stroke='currentColor'
+                strokeWidth='1.8'
+                strokeLinejoin='round'
+                strokeLinecap='round'
+              />
+            </svg>
             단어추가
           </button>
 
+          {/* 라이브러리 탭 */}
           <button
             type='button'
-            className='flex flex-1 flex-col items-center gap-0.5 py-3 text-xs font-semibold text-gray04 focus-visible:outline focus-visible:outline-2'
+            className={getNavItemClass(location.pathname === '/library')}
             onClick={handleNavLibrary}
           >
-            <span className='text-base' aria-hidden='true'>
-              &#9776;
-            </span>
+            <svg width='22' height='22' viewBox='0 0 24 24' fill='none' aria-hidden='true'>
+              <rect x='4' y='3' width='4' height='18' rx='1' stroke='currentColor' strokeWidth='1.8' />
+              <rect x='10' y='6' width='4' height='15' rx='1' stroke='currentColor' strokeWidth='1.8' />
+              <path
+                d='M16 9.5L20 8V21L16 19.5V9.5Z'
+                stroke='currentColor'
+                strokeWidth='1.8'
+                strokeLinejoin='round'
+              />
+            </svg>
             라이브러리
           </button>
         </div>
