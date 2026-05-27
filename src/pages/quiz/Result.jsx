@@ -45,6 +45,14 @@ export const QuizResultPage = () => {
         >
           다시 풀기
         </button>
+        {wrong > 0 && (
+          <button
+            onClick={() => navigate('/wrong-note')}
+            className='w-full py-4 bg-incorrect/15 rounded-2xl text-incorrect font-semibold'
+          >
+            오답노트 보기
+          </button>
+        )}
         <button
           onClick={() => navigate('/')}
           className='w-full py-4 bg-layer rounded-2xl text-gray02 font-semibold'

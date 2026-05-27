@@ -25,6 +25,9 @@ const QuizPlayPage = lazy(() =>
 const QuizResultPage = lazy(() =>
   import('@/pages/quiz/Result').then(m => ({ default: m.QuizResultPage }))
 );
+const WrongNotePage = lazy(() =>
+  import('@/pages/wrongNote/index').then(m => ({ default: m.WrongNotePage }))
+);
 
 export const MainRouter = () => {
   return (
@@ -38,6 +41,7 @@ export const MainRouter = () => {
           <Route path='/study/:wordbookId' element={<StudyPage />} />
           <Route path='/quiz/play' element={<QuizPlayPage />} />
           <Route path='/quiz/result' element={<QuizResultPage />} />
+          <Route path='/wrong-note' element={<WrongNotePage />} />
         </Route>
       </Routes>
     </Suspense>

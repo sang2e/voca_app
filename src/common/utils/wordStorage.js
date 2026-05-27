@@ -62,3 +62,37 @@ export function updateWord(wordbookId, wordId, word, meaning) {
   save(books);
   return books;
 }
+
+const WRONG_KEY = 'voca_wrong_notes';
+
+export function getWrongNotes() {
+  try {
+    return JSON.parse(localStorage.getItem(WRONG_KEY)) ?? [];
+  } catch {
+    return [];
+  }
+}
+
+export function addWrongNote({ id, word, meaning, wordBookId, wordBookTitle }) {
+  const notes = getWrongNotes();
+  const existing = notes.find(n => n.id === id);
+  if (existing) {
+    localStorage.setItem(WRONG_KEY, JSON.stringify(
+      notes.map(n => n.id === id
+        ? { ...n, wrongCount: n.wrongCount + 1, lastWrongAt: new Date().toISOString() }
+        : n
+      )
+    ));
+  } else {
+    localStorage.setItem(WRONG_KEY, JSON.stringify([
+      ...notes,
+      { id, word, meaning, wordBookId, wordBookTitle, wrongCount: 1, lastWrongAt: new Date().toISOString() },
+    ]));
+  }
+}
+
+export function removeWrongNote(id) {
+  const notes = getWrongNotes().filter(n => n.id !== id);
+  localStorage.setItem(WRONG_KEY, JSON.stringify(notes));
+  return notes;
+}

@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getWordBooks } from '@/common/utils/wordStorage';
+import { getWordBooks, addWrongNote } from '@/common/utils/wordStorage';
 
 const TIMER_SEC = 10;
 const MIN_WORDS = 4;
@@ -12,7 +12,7 @@ function shuffle(arr) {
 function buildQuizzes(words) {
   return shuffle(words).map((word) => {
     const distractors = shuffle(words.filter(w => w.id !== word.id)).slice(0, 3).map(w => w.word);
-    return { meaning: word.meaning, answer: word.word, options: shuffle([word.word, ...distractors]) };
+    return { wordId: word.id, meaning: word.meaning, answer: word.word, options: shuffle([word.word, ...distractors]) };
   });
 }
 
@@ -65,7 +65,7 @@ function BookSelectStep({ books, onStart }) {
       )}
 
       <div className='mt-auto pt-6'>
-        <button type='button' disabled={!canStart} onClick={() => onStart(selected.words)}
+        <button type='button' disabled={!canStart} onClick={() => onStart(selected)}
           className='w-full py-4 bg-main rounded-2xl text-white font-semibold text-sm disabled:opacity-40'>
           퀴즈 시작
         </button>
@@ -74,7 +74,7 @@ function BookSelectStep({ books, onStart }) {
   );
 }
 
-function QuizPlay({ words, onDone }) {
+function QuizPlay({ words, bookId, bookTitle, onDone }) {
   const quizzes = useMemo(() => buildQuizzes(words), [words]);
   const [index, setIndex] = useState(0);
   const [selected, setSelected] = useState(null);
@@ -82,6 +82,7 @@ function QuizPlay({ words, onDone }) {
   const [correct, setCorrect] = useState(0);
   const [timeLeft, setTimeLeft] = useState(TIMER_SEC);
   const timerRef = useRef(null);
+  const wrongWordsRef = useRef([]);
 
   const isAnswered = selected !== null || timedOut;
   const quiz = quizzes[index];
@@ -103,16 +104,33 @@ function QuizPlay({ words, onDone }) {
     return () => clearInterval(timerRef.current);
   }, [index]);
 
+  const addToWrong = (q) => {
+    if (!wrongWordsRef.current.some(w => w.id === q.wordId)) {
+      wrongWordsRef.current = [...wrongWordsRef.current, {
+        id: q.wordId, word: q.answer, meaning: q.meaning,
+        wordBookId: bookId, wordBookTitle: bookTitle,
+      }];
+    }
+  };
+
+  useEffect(() => {
+    if (timedOut) addToWrong(quiz);
+  }, [timedOut, quiz, bookId, bookTitle]);
+
   const handleSelect = (option) => {
     if (isAnswered) return;
     clearInterval(timerRef.current);
     setSelected(option);
-    if (option === quiz.answer) setCorrect(c => c + 1);
+    if (option === quiz.answer) {
+      setCorrect(c => c + 1);
+    } else {
+      addToWrong(quiz);
+    }
   };
 
   const handleNext = () => {
     if (isLast) {
-      onDone(quizzes.length, correct);
+      onDone(quizzes.length, correct, wrongWordsRef.current);
     } else {
       clearInterval(timerRef.current);
       setTimeLeft(TIMER_SEC);
@@ -187,18 +205,21 @@ function QuizPlay({ words, onDone }) {
 export const QuizPlayPage = () => {
   const navigate = useNavigate();
   const [books] = useState(() => getWordBooks());
-  const [words, setWords] = useState(null);
+  const [selectedBook, setSelectedBook] = useState(null);
 
-  if (!words) {
-    return <BookSelectStep books={books} onStart={setWords} />;
+  if (!selectedBook) {
+    return <BookSelectStep books={books} onStart={setSelectedBook} />;
   }
 
   return (
     <QuizPlay
-      words={words}
-      onDone={(total, correct) =>
-        navigate('/quiz/result', { state: { total, correct }, replace: true })
-      }
+      words={selectedBook.words}
+      bookId={selectedBook.id}
+      bookTitle={selectedBook.title}
+      onDone={(total, correct, wrongWords) => {
+        wrongWords.forEach(w => addWrongNote(w));
+        navigate('/quiz/result', { state: { total, correct }, replace: true });
+      }}
     />
   );
 };
