@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getBookmarks, toggleBookmark } from '@/common/utils/wordStorage';
 
+const MIN_QUIZ_WORDS = 4;
+
 export const BookmarkPage = () => {
   const navigate = useNavigate();
   const [bookmarks, setBookmarks] = useState(() => getBookmarks());
@@ -21,7 +23,7 @@ export const BookmarkPage = () => {
   const groupList = Object.values(groups);
 
   return (
-    <div className='flex flex-col min-h-dvh px-5 pt-10 pb-20'>
+    <div className='flex flex-col min-h-dvh px-5 pt-10 pb-32'>
       <div className='flex items-center gap-3 mb-6'>
         <button
           type='button'
@@ -80,6 +82,24 @@ export const BookmarkPage = () => {
           ))}
         </ul>
       )}
+      <div className='fixed bottom-0 left-0 right-0'
+        style={{ background: 'linear-gradient(to top, var(--color-bg, #0f0f13) 70%, transparent)' }}>
+        <div className='mx-auto w-full max-w-[430px] px-5 pb-8 pt-4'>
+          <button
+            type='button'
+            disabled={bookmarks.length < MIN_QUIZ_WORDS}
+            onClick={() => navigate('/bookmark/quiz')}
+            className='w-full py-4 bg-main rounded-2xl text-white font-semibold text-sm disabled:opacity-40'
+          >
+            북마크 복습하기
+          </button>
+          {bookmarks.length > 0 && bookmarks.length < MIN_QUIZ_WORDS && (
+            <p className='mt-2 text-xs text-gray04 text-center'>
+              퀴즈를 위해 {MIN_QUIZ_WORDS}개 이상 필요해요 (현재 {bookmarks.length}개)
+            </p>
+          )}
+        </div>
+      </div>
     </div>
   );
 };

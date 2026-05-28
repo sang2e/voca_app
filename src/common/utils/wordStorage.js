@@ -129,12 +129,12 @@ export function isBookmarked(wordBookId, wordId) {
   return getBookmarks().some(b => b.wordBookId === wordBookId && b.wordId === wordId);
 }
 
-export function toggleBookmark({ wordBookId, wordId, word, meaning }) {
+export function toggleBookmark({ wordBookId, wordId, word, meaning, wordBookTitle }) {
   const bookmarks = getBookmarks();
   const exists = bookmarks.some(b => b.wordBookId === wordBookId && b.wordId === wordId);
   const updated = exists
     ? bookmarks.filter(b => !(b.wordBookId === wordBookId && b.wordId === wordId))
-    : [...bookmarks, { wordBookId, wordId, word, meaning }];
+    : [...bookmarks, { wordBookId, wordId, word, meaning, wordBookTitle }];
   localStorage.setItem(BOOKMARK_KEY, JSON.stringify(updated));
   return !exists;
 }
