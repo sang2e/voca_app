@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getWrongNotes, removeWrongNote } from '@/common/utils/wordStorage';
+import { BottomNav } from '@/common/components/BottomNav';
+
 
 export const WrongNotePage = () => {
   const navigate = useNavigate();
@@ -11,9 +13,8 @@ export const WrongNotePage = () => {
   };
 
   return (
-    <div className='flex flex-col min-h-dvh px-5 pt-10 pb-8'>
+    <div className='flex flex-col min-h-dvh px-5 pt-10 pb-20'>
       <div className='flex items-center gap-3 mb-6'>
-        <button onClick={() => navigate(-1)} className='text-gray03 text-lg leading-none'>←</button>
         <h1 className='text-xl font-bold text-gray01'>오답노트</h1>
       </div>
 
@@ -44,6 +45,18 @@ export const WrongNotePage = () => {
           ))}
         </ul>
       )}
+
+      <div className='mt-auto pt-6'>
+        <button
+          disabled={notes.length === 0}
+          onClick={() => navigate('/wrong-note/review')}
+          className='w-full py-4 bg-main rounded-2xl text-white font-semibold text-sm disabled:opacity-40'
+        >
+          오답 복습하기
+        </button>
+      </div>
+
+      <BottomNav />
     </div>
   );
 };

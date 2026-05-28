@@ -37,7 +37,15 @@ function BookSelectStep({ books, onStart }) {
 
   return (
     <div className='flex flex-col min-h-dvh px-5 pt-10 pb-8'>
-      <h1 className='text-xl font-bold text-gray01 mb-1'>퀴즈</h1>
+      <div className='flex items-center gap-3 mb-5'>
+        <button type='button' onClick={() => navigate('/')}
+          className='rounded-lg p-1 text-gray03 focus-visible:outline focus-visible:outline-2 focus-visible:outline-main'>
+          <svg width='22' height='22' viewBox='0 0 24 24' fill='none' aria-hidden='true'>
+            <path d='M15 18L9 12L15 6' stroke='currentColor' strokeWidth='1.8' strokeLinecap='round' strokeLinejoin='round' />
+          </svg>
+        </button>
+        <h1 className='text-xl font-bold text-gray01'>퀴즈</h1>
+      </div>
       <p className='text-sm text-gray03 mb-6'>단어장을 선택하세요</p>
 
       <ul className='flex flex-col gap-3'>
@@ -74,7 +82,7 @@ function BookSelectStep({ books, onStart }) {
   );
 }
 
-function QuizPlay({ words, bookId, bookTitle, onDone }) {
+function QuizPlay({ words, bookId, bookTitle, onDone, onBack }) {
   const quizzes = useMemo(() => buildQuizzes(words), [words]);
   const [index, setIndex] = useState(0);
   const [selected, setSelected] = useState(null);
@@ -83,6 +91,7 @@ function QuizPlay({ words, bookId, bookTitle, onDone }) {
   const [timeLeft, setTimeLeft] = useState(TIMER_SEC);
   const timerRef = useRef(null);
   const wrongWordsRef = useRef([]);
+  const resultsRef = useRef([]);
 
   const isAnswered = selected !== null || timedOut;
   const quiz = quizzes[index];
@@ -114,23 +123,28 @@ function QuizPlay({ words, bookId, bookTitle, onDone }) {
   };
 
   useEffect(() => {
-    if (timedOut) addToWrong(quiz);
+    if (timedOut) {
+      addToWrong(quiz);
+      resultsRef.current = [...resultsRef.current, { wordId: quiz.wordId, wordBookId: bookId, wordBookTitle: bookTitle, meaning: quiz.meaning, answer: quiz.answer, userAnswer: null, isCorrect: false }];
+    }
   }, [timedOut, quiz, bookId, bookTitle]);
 
   const handleSelect = (option) => {
     if (isAnswered) return;
     clearInterval(timerRef.current);
     setSelected(option);
-    if (option === quiz.answer) {
+    const isCorrect = option === quiz.answer;
+    if (isCorrect) {
       setCorrect(c => c + 1);
     } else {
       addToWrong(quiz);
     }
+    resultsRef.current = [...resultsRef.current, { wordId: quiz.wordId, wordBookId: bookId, wordBookTitle: bookTitle, meaning: quiz.meaning, answer: quiz.answer, userAnswer: option, isCorrect }];
   };
 
   const handleNext = () => {
     if (isLast) {
-      onDone(quizzes.length, correct, wrongWordsRef.current);
+      onDone(quizzes.length, correct, wrongWordsRef.current, resultsRef.current);
     } else {
       clearInterval(timerRef.current);
       setTimeLeft(TIMER_SEC);
@@ -153,7 +167,15 @@ function QuizPlay({ words, bookId, bookTitle, onDone }) {
   return (
     <div className='flex flex-col min-h-dvh px-5 pt-10 pb-8'>
       <div className='flex items-center justify-between mb-2'>
-        <span className='text-gray03 text-sm'>{index + 1} / {quizzes.length}</span>
+        <div className='flex items-center gap-2'>
+          <button type='button' onClick={onBack}
+            className='rounded-lg p-1 text-gray03 focus-visible:outline focus-visible:outline-2 focus-visible:outline-main'>
+            <svg width='20' height='20' viewBox='0 0 24 24' fill='none' aria-hidden='true'>
+              <path d='M15 18L9 12L15 6' stroke='currentColor' strokeWidth='1.8' strokeLinecap='round' strokeLinejoin='round' />
+            </svg>
+          </button>
+          <span className='text-gray03 text-sm'>{index + 1} / {quizzes.length}</span>
+        </div>
         <span className={`text-sm font-medium ${isWarning ? 'text-incorrect' : 'text-gray03'}`}>
           {timedOut ? '시간 초과' : `남은 시간 ${timeLeft}초`}
         </span>
@@ -216,9 +238,10 @@ export const QuizPlayPage = () => {
       words={selectedBook.words}
       bookId={selectedBook.id}
       bookTitle={selectedBook.title}
-      onDone={(total, correct, wrongWords) => {
+      onBack={() => setSelectedBook(null)}
+      onDone={(total, correct, wrongWords, results) => {
         wrongWords.forEach(w => addWrongNote(w));
-        navigate('/quiz/result', { state: { total, correct }, replace: true });
+        navigate('/quiz/result', { state: { total, correct, results }, replace: true });
       }}
     />
   );

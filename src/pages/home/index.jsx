@@ -1,27 +1,32 @@
 import { useState, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
-import { getWordBooks } from '@/common/utils/wordStorage';
+import { getWordBooks, getStudyRecords } from '@/common/utils/wordStorage';
+import { BottomNav } from '@/common/components/BottomNav';
 
 import { HomeWordbookCard } from './components/HomeWordbookCard';
 
-function getNavItemClass(isActive) {
-  const base = 'flex flex-1 flex-col items-center gap-1 py-3 text-xs font-semibold focus-visible:outline focus-visible:outline-2';
-  if (isActive) return `${base} text-main`;
-  return `${base} text-gray05`;
-}
-
 export const HomePage = () => {
   const navigate = useNavigate();
-  const location = useLocation();
   const [books, setBooks] = useState([]);
+  const [studyRecords, setStudyRecords] = useState([]);
 
   useEffect(() => {
     setBooks(getWordBooks());
+    setStudyRecords(getStudyRecords());
   }, []);
 
   const wordbookCount = books.length;
   const totalWordCount = books.reduce((sum, b) => sum + b.words.length, 0);
+
+  const today = new Date().toDateString();
+  const existingIds = new Set(books.map(b => b.id));
+  const todayLearnedCount = studyRecords
+    .filter(r => existingIds.has(r.wordBookId) && new Date(r.completedAt).toDateString() === today)
+    .reduce((sum, r) => sum + r.learnedCount, 0);
+  const progress = totalWordCount > 0 ? Math.min(100, Math.round((todayLearnedCount / totalWordCount) * 100)) : 0;
+
+  const studyRecordMap = Object.fromEntries(studyRecords.map(r => [r.wordBookId, r]));
 
   const handleStudyStart = () => {
     if (books.length === 0) { navigate('/library'); return; }
@@ -52,6 +57,16 @@ export const HomePage = () => {
           <div>
             <span className='text-3xl font-bold text-gray01'>{totalWordCount}</span>
             <p className='mt-0.5 text-xs text-gray03'>총 단어</p>
+          </div>
+        </div>
+
+        <div className='mt-4'>
+          <div className='mb-1.5 flex items-center justify-between'>
+            <span className='text-xs text-gray03'>오늘 학습 진행률</span>
+            <span className='text-xs font-semibold text-main'>{todayLearnedCount} / {totalWordCount} 단어 ({progress}%)</span>
+          </div>
+          <div className='h-2 w-full overflow-hidden rounded-full bg-layer'>
+            <div className='h-full rounded-full bg-main transition-all' style={{ width: `${progress}%` }} />
           </div>
         </div>
 
@@ -95,41 +110,14 @@ export const HomePage = () => {
           <ul className='flex flex-col gap-3'>
             {books.map(wordbook => (
               <li key={wordbook.id}>
-                <HomeWordbookCard wordbook={wordbook} onStudyClick={id => navigate(`/study/${id}`)} />
+                <HomeWordbookCard wordbook={wordbook} studyRecord={studyRecordMap[wordbook.id]} onStudyClick={id => navigate(`/study/${id}`)} />
               </li>
             ))}
           </ul>
         )}
       </section>
 
-      <nav
-        className='fixed bottom-0 left-1/2 w-full max-w-[430px] -translate-x-1/2 border-t border-layer bg-surface'
-        aria-label='하단 내비게이션'
-      >
-        <div className='flex'>
-          <button type='button' className={getNavItemClass(location.pathname === '/')} onClick={() => navigate('/')}>
-            <svg width='22' height='22' viewBox='0 0 24 24' fill='none' aria-hidden='true'>
-              <path d='M3 12L12 3L21 12V21H15V15H9V21H3V12Z' stroke='currentColor' strokeWidth='1.8' strokeLinejoin='round' strokeLinecap='round' />
-            </svg>
-            홈
-          </button>
-          <button type='button' className={getNavItemClass(location.pathname === '/words/new')} onClick={() => navigate('/words/new')}>
-            <svg width='22' height='22' viewBox='0 0 24 24' fill='none' aria-hidden='true'>
-              <path d='M12 20H21' stroke='currentColor' strokeWidth='1.8' strokeLinecap='round' />
-              <path d='M16.5 3.5L20.5 7.5L8 20H4V16L16.5 3.5Z' stroke='currentColor' strokeWidth='1.8' strokeLinejoin='round' strokeLinecap='round' />
-            </svg>
-            단어추가
-          </button>
-          <button type='button' className={getNavItemClass(location.pathname === '/library')} onClick={() => navigate('/library')}>
-            <svg width='22' height='22' viewBox='0 0 24 24' fill='none' aria-hidden='true'>
-              <rect x='4' y='3' width='4' height='18' rx='1' stroke='currentColor' strokeWidth='1.8' />
-              <rect x='10' y='6' width='4' height='15' rx='1' stroke='currentColor' strokeWidth='1.8' />
-              <path d='M16 9.5L20 8V21L16 19.5V9.5Z' stroke='currentColor' strokeWidth='1.8' strokeLinejoin='round' />
-            </svg>
-            라이브러리
-          </button>
-        </div>
-      </nav>
+      <BottomNav />
     </div>
   );
 };

@@ -1,14 +1,19 @@
 import { useEffect, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation,useNavigate } from 'react-router-dom';
 
-import { getWordBooks, addWordBook, deleteWordBook, deleteWord, updateWord } from '@/common/utils/wordStorage';
+import { BottomNav } from '@/common/components/BottomNav';
+import { addWordBook, deleteWord, deleteWordBook, getBookmarks, getWordBooks, toggleBookmark, updateWord } from '@/common/utils/wordStorage';
 
-function getNavItemClass(isActive) {
-  const base = 'flex flex-1 flex-col items-center gap-1 py-3 text-xs font-semibold focus-visible:outline focus-visible:outline-2';
-  return isActive ? `${base} text-main` : `${base} text-gray05`;
+function BookmarkIcon({ filled }) {
+  return (
+    <svg width='18' height='18' viewBox='0 0 24 24' fill={filled ? 'currentColor' : 'none'} aria-hidden='true'>
+      <path d='M5 3h14a1 1 0 0 1 1 1v17l-8-4-8 4V4a1 1 0 0 1 1-1z'
+        stroke='currentColor' strokeWidth='1.8' strokeLinecap='round' strokeLinejoin='round' />
+    </svg>
+  );
 }
 
-function WordCard({ wordbookId, id, word, meaning, onDelete, onUpdate }) {
+function WordCard({ wordbookId, id, word, meaning, bookmarked, onDelete, onUpdate, onToggleBookmark }) {
   const [editing, setEditing] = useState(false);
   const [editWord, setEditWord] = useState(word);
   const [editMeaning, setEditMeaning] = useState(meaning);
@@ -56,12 +61,17 @@ function WordCard({ wordbookId, id, word, meaning, onDelete, onUpdate }) {
   }
 
   return (
-    <li className='flex items-center justify-between rounded-xl bg-card px-5 py-4'>
+    <li className={`flex items-center justify-between rounded-xl px-5 py-4 ${bookmarked ? 'border border-main/30 bg-main/5' : 'bg-card'}`}>
       <div className='flex flex-col gap-0.5'>
         <span className='text-sm font-semibold text-gray01'>{word}</span>
         <span className='text-sm text-gray03'>{meaning}</span>
       </div>
-      <div className='flex gap-2'>
+      <div className='flex gap-1'>
+        <button type='button' onClick={() => onToggleBookmark(wordbookId, id, word, meaning)}
+          aria-label={bookmarked ? '북마크 해제' : '북마크 추가'}
+          className={`rounded-lg p-1.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-main02 ${bookmarked ? 'text-main' : 'text-gray04 hover:text-main'}`}>
+          <BookmarkIcon filled={bookmarked} />
+        </button>
         <button type='button' onClick={() => setEditing(true)} aria-label='수정'
           className='rounded-lg p-1.5 text-gray04 hover:text-main focus-visible:outline focus-visible:outline-2 focus-visible:outline-main02'>
           <svg width='16' height='16' viewBox='0 0 24 24' fill='none' aria-hidden='true'>
@@ -84,14 +94,17 @@ function WordCard({ wordbookId, id, word, meaning, onDelete, onUpdate }) {
 export const LibraryPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-
   const [books, setBooks] = useState([]);
   const [newTitle, setNewTitle] = useState('');
   const [selectedBook, setSelectedBook] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [bookmarks, setBookmarks] = useState(() => getBookmarks());
 
   useEffect(() => {
     setBooks(getWordBooks());
-  }, []);
+    setSelectedBook(null);
+    setSearchQuery('');
+  }, [location.key]);
 
   function handleAddBook() {
     if (!newTitle.trim()) return;
@@ -118,46 +131,69 @@ export const LibraryPage = () => {
     if (refreshed) setSelectedBook(refreshed);
   }
 
-  const Nav = (
-    <nav className='fixed bottom-0 left-1/2 w-full max-w-[430px] -translate-x-1/2 border-t border-layer bg-surface' aria-label='하단 내비게이션'>
-      <div className='flex'>
-        <button type='button' className={getNavItemClass(location.pathname === '/')} onClick={() => navigate('/')}>
-          <svg width='22' height='22' viewBox='0 0 24 24' fill='none' aria-hidden='true'>
-            <path d='M3 12L12 3L21 12V21H15V15H9V21H3V12Z' stroke='currentColor' strokeWidth='1.8' strokeLinejoin='round' strokeLinecap='round' />
-          </svg>
-          홈
-        </button>
-        <button type='button' className={getNavItemClass(location.pathname === '/words/new')} onClick={() => navigate('/words/new')}>
-          <svg width='22' height='22' viewBox='0 0 24 24' fill='none' aria-hidden='true'>
-            <path d='M12 20H21' stroke='currentColor' strokeWidth='1.8' strokeLinecap='round' />
-            <path d='M16.5 3.5L20.5 7.5L8 20H4V16L16.5 3.5Z' stroke='currentColor' strokeWidth='1.8' strokeLinejoin='round' strokeLinecap='round' />
-          </svg>
-          단어추가
-        </button>
-        <button type='button' className={getNavItemClass(location.pathname === '/library')} onClick={() => navigate('/library')}>
-          <svg width='22' height='22' viewBox='0 0 24 24' fill='none' aria-hidden='true'>
-            <rect x='4' y='3' width='4' height='18' rx='1' stroke='currentColor' strokeWidth='1.8' />
-            <rect x='10' y='6' width='4' height='15' rx='1' stroke='currentColor' strokeWidth='1.8' />
-            <path d='M16 9.5L20 8V21L16 19.5V9.5Z' stroke='currentColor' strokeWidth='1.8' strokeLinejoin='round' />
-          </svg>
-          라이브러리
-        </button>
-      </div>
-    </nav>
-  );
+  function handleToggleBookmark(wordbookId, wordId, word, meaning) {
+    toggleBookmark({ wordBookId: wordbookId, wordId, word, meaning });
+    setBookmarks(getBookmarks());
+  }
+
+  function checkBookmarked(wordbookId, wordId) {
+    return bookmarks.some(b => b.wordBookId === wordbookId && b.wordId === wordId);
+  }
+
 
   if (selectedBook) {
+    const q = searchQuery.trim().toLowerCase();
+    const filteredWords = q
+      ? selectedBook.words.filter(
+          w => w.word.toLowerCase().includes(q) || w.meaning.toLowerCase().includes(q)
+        )
+      : selectedBook.words;
+
     return (
       <div className='flex min-h-dvh flex-col pb-20'>
         <header className='flex items-center gap-3 px-5 py-4'>
-          <button type='button' onClick={() => setSelectedBook(null)} aria-label='뒤로가기'
+          <button type='button' onClick={() => { setSelectedBook(null); setSearchQuery(''); }} aria-label='뒤로가기'
             className='rounded-lg p-1 text-gray03 focus-visible:outline focus-visible:outline-2 focus-visible:outline-main'>
             <svg width='22' height='22' viewBox='0 0 24 24' fill='none' aria-hidden='true'>
               <path d='M15 18L9 12L15 6' stroke='currentColor' strokeWidth='1.8' strokeLinecap='round' strokeLinejoin='round' />
             </svg>
           </button>
-          <h1 className='text-xl font-bold text-gray01'>{selectedBook.title}</h1>
+          <h1 className='flex-1 text-xl font-bold text-gray01'>{selectedBook.title}</h1>
+          <div className='flex gap-2'>
+            <button type='button' onClick={() => navigate(`/study/${selectedBook.id}`)}
+              className='rounded-xl border border-main px-4 py-2 text-xs font-bold text-main focus-visible:outline focus-visible:outline-2 focus-visible:outline-main02'>
+              학습하기
+            </button>
+            <button type='button' onClick={() => navigate('/words/new')}
+              className='rounded-xl bg-main px-4 py-2 text-xs font-bold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-main02'>
+              단어 추가
+            </button>
+          </div>
         </header>
+
+        {selectedBook.words.length > 0 && (
+          <div className='mx-5 mb-3 relative'>
+            <input
+              type='text'
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              placeholder='단어 또는 뜻 검색'
+              className='w-full rounded-xl bg-layer px-4 py-3 pr-10 text-sm text-gray01 placeholder:text-gray05 focus:outline-none focus:ring-2 focus:ring-main'
+            />
+            {searchQuery && (
+              <button
+                type='button'
+                onClick={() => setSearchQuery('')}
+                aria-label='검색어 초기화'
+                className='absolute right-3 top-1/2 -translate-y-1/2 text-gray04 hover:text-gray02'
+              >
+                <svg width='16' height='16' viewBox='0 0 24 24' fill='none' aria-hidden='true'>
+                  <path d='M18 6L6 18M6 6L18 18' stroke='currentColor' strokeWidth='1.8' strokeLinecap='round' />
+                </svg>
+              </button>
+            )}
+          </div>
+        )}
 
         <main className='mx-5 mt-2'>
           {selectedBook.words.length === 0 ? (
@@ -169,16 +205,30 @@ export const LibraryPage = () => {
               </button>
             </div>
           ) : (
-            <ul className='flex flex-col gap-3'>
-              {selectedBook.words.map(w => (
-                <WordCard key={w.id} wordbookId={selectedBook.id} id={w.id} word={w.word} meaning={w.meaning}
-                  onDelete={handleDeleteWord} onUpdate={handleUpdateWord} />
-              ))}
-            </ul>
+            <>
+              {q && (
+                <p className='mb-3 text-xs text-gray04'>
+                  검색 결과 <span className='font-semibold text-gray02'>{filteredWords.length}</span>개
+                </p>
+              )}
+              {filteredWords.length === 0 ? (
+                <div className='flex flex-col items-center gap-2 pt-20 text-center'>
+                  <p className='text-sm text-gray04'>검색 결과가 없습니다</p>
+                </div>
+              ) : (
+                <ul className='flex flex-col gap-3'>
+                  {filteredWords.map(w => (
+                    <WordCard key={w.id} wordbookId={selectedBook.id} id={w.id} word={w.word} meaning={w.meaning}
+                      bookmarked={checkBookmarked(selectedBook.id, w.id)}
+                      onDelete={handleDeleteWord} onUpdate={handleUpdateWord} onToggleBookmark={handleToggleBookmark} />
+                  ))}
+                </ul>
+              )}
+            </>
           )}
         </main>
 
-        {Nav}
+        <BottomNav />
       </div>
     );
   }
@@ -241,7 +291,7 @@ export const LibraryPage = () => {
         )}
       </main>
 
-      {Nav}
+      <BottomNav />
     </div>
   );
 };

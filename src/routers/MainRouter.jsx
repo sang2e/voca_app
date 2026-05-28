@@ -28,6 +28,12 @@ const QuizResultPage = lazy(() =>
 const WrongNotePage = lazy(() =>
   import('@/pages/wrongNote/index').then(m => ({ default: m.WrongNotePage }))
 );
+const WrongNoteReviewPage = lazy(() =>
+  import('@/pages/wrongNote/ReviewQuiz').then(m => ({ default: m.WrongNoteReviewPage }))
+);
+const BookmarkPage = lazy(() =>
+  import('@/pages/bookmark/index').then(m => ({ default: m.BookmarkPage }))
+);
 
 export const MainRouter = () => {
   return (
@@ -42,6 +48,8 @@ export const MainRouter = () => {
           <Route path='/quiz/play' element={<QuizPlayPage />} />
           <Route path='/quiz/result' element={<QuizResultPage />} />
           <Route path='/wrong-note' element={<WrongNotePage />} />
+          <Route path='/wrong-note/review' element={<WrongNoteReviewPage />} />
+          <Route path='/bookmark' element={<BookmarkPage />} />
         </Route>
       </Routes>
     </Suspense>

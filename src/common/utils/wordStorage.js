@@ -63,6 +63,24 @@ export function updateWord(wordbookId, wordId, word, meaning) {
   return books;
 }
 
+const STUDY_KEY = 'voca_study_records';
+
+export function getStudyRecords() {
+  try {
+    return JSON.parse(localStorage.getItem(STUDY_KEY)) ?? [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveStudyRecord(wordBookId, learnedCount, totalCount) {
+  const records = getStudyRecords().filter(r => r.wordBookId !== wordBookId);
+  localStorage.setItem(STUDY_KEY, JSON.stringify([
+    ...records,
+    { wordBookId, completedAt: new Date().toISOString(), learnedCount, totalCount },
+  ]));
+}
+
 const WRONG_KEY = 'voca_wrong_notes';
 
 export function getWrongNotes() {
@@ -95,4 +113,28 @@ export function removeWrongNote(id) {
   const notes = getWrongNotes().filter(n => n.id !== id);
   localStorage.setItem(WRONG_KEY, JSON.stringify(notes));
   return notes;
+}
+
+const BOOKMARK_KEY = 'voca_bookmarks';
+
+export function getBookmarks() {
+  try {
+    return JSON.parse(localStorage.getItem(BOOKMARK_KEY)) ?? [];
+  } catch {
+    return [];
+  }
+}
+
+export function isBookmarked(wordBookId, wordId) {
+  return getBookmarks().some(b => b.wordBookId === wordBookId && b.wordId === wordId);
+}
+
+export function toggleBookmark({ wordBookId, wordId, word, meaning }) {
+  const bookmarks = getBookmarks();
+  const exists = bookmarks.some(b => b.wordBookId === wordBookId && b.wordId === wordId);
+  const updated = exists
+    ? bookmarks.filter(b => !(b.wordBookId === wordBookId && b.wordId === wordId))
+    : [...bookmarks, { wordBookId, wordId, word, meaning }];
+  localStorage.setItem(BOOKMARK_KEY, JSON.stringify(updated));
+  return !exists;
 }
